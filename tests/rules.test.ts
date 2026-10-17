@@ -121,6 +121,30 @@ describe('Firebase Realtime Database Rules', () => {
     await assertSucceeds(set(ref(hostDb, 'rooms/ABCDE/phase'), 'discuss'))
   })
 
+  it('allows a player to remove only their own room entry during a game', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.database()
+      await set(ref(db, 'rooms/ABCDE'), {
+        hostUid: 'host123',
+        phase: 'hint',
+        createdAt: Date.now(),
+        players: {
+          host123: { name: 'Host', joinedAt: Date.now(), alive: true },
+          player456: { name: 'PlayerTwo', joinedAt: Date.now(), alive: true },
+        },
+      })
+      await set(ref(db, 'roomSecrets/ABCDE/player456'), { role: 'crew', title: 'A', statement: 'A' })
+      await set(ref(db, 'roomSecrets/ABCDE/host123'), { role: 'imposter', title: 'B', statement: 'B' })
+    })
+
+    const playerDb = testEnv.authenticatedContext('player456').database()
+
+    await assertSucceeds(set(ref(playerDb, 'rooms/ABCDE/players/player456'), null))
+    await assertFails(set(ref(playerDb, 'rooms/ABCDE/players/host123'), null))
+    await assertSucceeds(set(ref(playerDb, 'roomSecrets/ABCDE/player456'), null))
+    await assertFails(set(ref(playerDb, 'roomSecrets/ABCDE/host123'), null))
+  })
+
   it("proves a player cannot write another player's vote", async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const db = context.database()

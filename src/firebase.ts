@@ -5,6 +5,8 @@ import {
   get,
   set,
   onValue,
+  onDisconnect,
+  remove,
   ref,
   runTransaction,
   type Database,
@@ -164,6 +166,31 @@ export async function joinRoom(code: string, uid: string, name: string): Promise
   if (!result.committed) {
     throw new Error('Could not join this room. It may be full or already started.')
   }
+
+  const secretRef = ref(database, `roomSecrets/${code}/${uid}`)
+  const playerDisconnect = onDisconnect(playerRef)
+  const secretDisconnect = onDisconnect(secretRef)
+  try {
+    await playerDisconnect.remove()
+    await secretDisconnect.remove()
+  } catch (error) {
+    await Promise.allSettled([
+      playerDisconnect.cancel(),
+      secretDisconnect.cancel(),
+      remove(playerRef),
+    ])
+    throw error
+  }
+}
+
+export async function removeRoomPlayer(database: Database, code: string, uid: string): Promise<void> {
+  const playerRef = ref(database, `rooms/${code}/players/${uid}`)
+  const secretRef = ref(database, `roomSecrets/${code}/${uid}`)
+  await Promise.all([
+    onDisconnect(playerRef).cancel(),
+    onDisconnect(secretRef).cancel(),
+  ])
+  await Promise.all([remove(playerRef), remove(secretRef)])
 }
 
 export function observeRoom(

@@ -11,6 +11,7 @@ import {
   createRoom,
   joinRoom,
   updateRoomSettings,
+  removeRoomPlayer,
 } from './firebase'
 import { startGame, MIN_PLAYERS } from './game/startGame'
 import {
@@ -367,7 +368,19 @@ function App() {
     }
   }
 
-  function leaveRoom() {
+  async function leaveRoom() {
+    if (database && roomCode && user) {
+      setBusy(true)
+      setError('')
+      try {
+        await removeRoomPlayer(database, roomCode, user.uid)
+      } catch (reason) {
+        setError(getErrorMessage(reason))
+        setBusy(false)
+        return
+      }
+      setBusy(false)
+    }
     setRoom(null)
     setRoomCode('')
     setSecret(null)

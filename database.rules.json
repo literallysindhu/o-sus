@@ -11,7 +11,7 @@
         },
         "players": {
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid && !data.exists() && root.child('rooms').child($code).child('phase').val() === 'lobby'",
+            ".write": "auth != null && auth.uid === $uid && ((!data.exists() && root.child('rooms').child($code).child('phase').val() === 'lobby') || (data.exists() && !newData.exists()))",
             ".validate": "newData.hasChildren(['name', 'joinedAt'])",
             "name": {
               ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20"
@@ -58,7 +58,7 @@
         ".write": "auth != null && root.child('rooms').child($code).child('hostUid').val() === auth.uid",
         "$uid": {
           ".read": "auth != null && auth.uid === $uid",
-          ".write": "auth != null && root.child('rooms').child($code).child('hostUid').val() === auth.uid"
+          ".write": "auth != null && (root.child('rooms').child($code).child('hostUid').val() === auth.uid || (auth.uid === $uid && !newData.exists()))"
         }
       }
     },
