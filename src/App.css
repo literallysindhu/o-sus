@@ -1364,6 +1364,38 @@ h1 {
   }
 }
 
+@media (max-width: 600px) {
+  .app-shell {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .wordmark {
+    gap: 4px;
+    font-size: 18px;
+  }
+
+  .wordmark-mark {
+    width: 29px;
+    height: 29px;
+  }
+
+  .mode-toggle {
+    gap: 6px;
+    padding-right: 7px;
+    padding-left: 7px;
+    font-size: 9px;
+  }
+
+  .mode-toggle-label {
+    font-size: 8px;
+  }
+
+  .mode-toggle-value {
+    min-width: 39px;
+  }
+}
+
 .landing-covered > .topbar,
 .landing-covered > .landing-content,
 .landing-covered > .footer-note {
@@ -1826,5 +1858,116 @@ h1 {
   .splash-overlay * {
     animation-duration: 1ms !important;
     animation-delay: 0ms !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .intro-start-screen {
+    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+
+  .intro-start-mark {
+    width: clamp(155px, 52vw, 220px);
+    margin: -20px 0 -38px;
+  }
+
+  .intro-start-title {
+    font-size: clamp(58px, 18vw, 82px);
+  }
+
+  .intro-start-tagline {
+    margin: 14px 0 24px;
+    font-size: clamp(9px, 3vw, 12px);
+    letter-spacing: 0.08em;
+  }
+
+  .intro-start-button {
+    width: min(100%, 220px);
+    min-height: 52px;
+  }
+
+  .splash-content {
+    width: calc(100% - 28px);
+  }
+
+  .splash-terminal {
+    min-height: 0;
+    gap: 9px;
+    font-size: clamp(8px, 3vw, 11px);
+    letter-spacing: 0;
+  }
+
+  .splash-notation-stack {
+    font-size: clamp(38px, 12vw, 72px);
+  }
+
+  .splash-brand {
+    min-height: 150px;
+  }
+
+  .splash-tagline {
+    max-width: 90vw;
+    margin-top: 16px;
+    font-size: clamp(9px, 3vw, 12px);
+    line-height: 1.6;
+    letter-spacing: 0.09em;
+  }
+
+  .splash-skip-hint {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    font-size: 8px;
+  }
+}
+
+@media (max-height: 600px) {
+  .intro-start-mark {
+    width: min(42vh, 190px);
+    margin: -16px 0 -34px;
+  }
+
+  .intro-start-title {
+    font-size: clamp(52px, 12vh, 78px);
+  }
+
+  .intro-start-tagline {
+    margin-top: 10px;
+    margin-bottom: 18px;
+  }
+}
+
+@media (max-height: 450px) and (orientation: landscape) {
+  .intro-start-screen {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .intro-start-mark {
+    width: min(34vh, 140px);
+    margin: -34px 0 -48px;
+  }
+
+  .intro-start-title {
+    font-size: clamp(42px, 11vh, 60px);
+  }
+
+  .intro-start-tagline {
+    margin: 7px 0 12px;
+  }
+
+  .intro-start-button {
+    min-height: 44px;
+  }
+
+  .splash-brand {
+    min-height: 110px;
+  }
+
+  .splash-tagline {
+    margin-top: 10px;
+  }
+
+  .splash-skip-hint {
+    bottom: 8px;
   }
 }
