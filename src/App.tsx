@@ -23,6 +23,7 @@ import {
   resetToLobby,
   addBotPlayer,
   processBotsTurn,
+  voteToSkipDiscussion,
 } from './game/roundLoop'
 import { DEFAULT_SETTINGS, type RoomSettings } from './game/settings'
 import { RoomSettingsPanel } from './components/RoomSettingsPanel'
@@ -203,7 +204,9 @@ function App() {
         }
       }
     } else if (room.phase === 'discuss') {
-      if (isTimerExpired) {
+      const skipVotes = alivePlayers.filter(([, player]) => player.skipToVote).length
+      const hasSkipMajority = skipVotes > alivePlayers.length / 2
+      if (isTimerExpired || hasSkipMajority) {
         if (!isTransitioningRef.current) {
           isTransitioningRef.current = true
           advanceToVote(database, roomCode)
@@ -247,6 +250,20 @@ function App() {
     setError('')
     try {
       const code = await createRoom(user.uid, normalizedName, DEFAULT_SETTINGS, gameMode)
+      setRoomCode(code)
+    } catch (reason) {
+      setError(getErrorMessage(reason))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleCreateGeeksforGeeksRoom() {
+    if (!user || !canEnterRoom) return
+    setBusy(true)
+    setError('')
+    try {
+      const code = await createRoom(user.uid, normalizedName, DEFAULT_SETTINGS, 'geeksforgeeks')
       setRoomCode(code)
     } catch (reason) {
       setError(getErrorMessage(reason))
@@ -308,9 +325,14 @@ function App() {
   }
 
   async function handleSkipToVote() {
-    if (!database || !roomCode) return
+    if (!database || !roomCode || !user || !room) return
     try {
-      await advanceToVote(database, roomCode)
+      await voteToSkipDiscussion(
+        database,
+        roomCode,
+        user.uid,
+        !room.players[user.uid]?.skipToVote,
+      )
     } catch (reason) {
       setError(getErrorMessage(reason))
     }
@@ -395,10 +417,14 @@ function App() {
     const players = Object.entries(room.players ?? {})
     const isPlayerHost = room.hostUid === user?.uid
     const isClassicMode = room.gameMode === 'classic'
+    const isGeeksforGeeksRoom = room.gameMode === 'geeksforgeeks'
     const currentPlayer = user ? room.players[user.uid] : null
     const isAlive = currentPlayer?.alive !== false
     const myHint = currentPlayer?.hint
     const myVote = currentPlayer?.vote
+    const alivePlayers = players.filter(([, player]) => player.alive !== false)
+    const skipVotes = alivePlayers.filter(([, player]) => player.skipToVote).length
+    const skipVotesNeeded = Math.floor(alivePlayers.length / 2) + 1
 
     return (
       <main className="app-shell">
@@ -415,7 +441,7 @@ function App() {
             O<span>(sus)</span>
           </a>
           <span className="status-pill">
-            <i /> {isClassicMode ? 'CLASSIC' : 'DSA'} // {room.phase === 'lobby' ? 'LIVE LOBBY' : `PHASE // ${room.phase.toUpperCase()}`}
+            <i /> {isGeeksforGeeksRoom ? 'GEEKSFORGEEKS' : isClassicMode ? 'CLASSIC' : 'DSA'} // {room.phase === 'lobby' ? 'LIVE LOBBY' : `PHASE // ${room.phase.toUpperCase()}`}
           </span>
         </header>
 
@@ -425,9 +451,9 @@ function App() {
             <div className="room-heading">
               <p className="eyebrow">ROOM // WAITING FOR PLAYERS</p>
               <h1 id="room-title">
-                The war room<span className="cursor">_</span>
+                {isGeeksforGeeksRoom ? 'GeeksforGeeks room' : 'The war room'}<span className="cursor">_</span>
               </h1>
-              <p className="lede">Get your crew together. Trust absolutely nobody.</p>
+              <p className="lede">{isGeeksforGeeksRoom ? 'Club-only first-year room: Arrays, Strings, Binary Search, and Trees.' : 'Get your crew together. Trust absolutely nobody.'}</p>
             </div>
 
             <div className="room-code-panel">
@@ -550,7 +576,7 @@ function App() {
               onTouchStart={() => setRevealedDossier(true)}
               onTouchEnd={() => setRevealedDossier(false)}
               onClick={() => setRevealedDossier((prev) => !prev)}
-              aria-label="Secret problem dossier"
+              aria-label={isGeeksforGeeksRoom ? 'Secret DSA term dossier' : 'Secret problem dossier'}
             >
               <div className="dossier-header">
                 <p className="dossier-title">TOP SECRET // CLASSIFIED DOSSIER</p>
@@ -566,7 +592,9 @@ function App() {
                       secret.role === 'imposter' ? 'role-imposter' : 'role-crew'
                     }`}
                   >
-                    {secret.role === 'imposter' ? 'IMPOSTER // DECOY PROBLEM' : 'CREW // REAL PROBLEM'}
+                    {secret.role === 'imposter'
+                      ? isGeeksforGeeksRoom ? 'IMPOSTER // DECOY TERM' : 'IMPOSTER // DECOY PROBLEM'
+                      : isGeeksforGeeksRoom ? 'CREW // DSA TERM' : 'CREW // REAL PROBLEM'}
                   </span>
                   <h3 className="problem-heading">{secret.title}</h3>
                   <p className="problem-statement">{secret.statement}</p>
@@ -574,10 +602,14 @@ function App() {
                     {secret.role === 'imposter'
                       ? isClassicMode
                         ? '⚠️ You have a different subject. Blend in with vague clues and do not get exposed.'
-                        : '⚠️ You have a decoy problem. Blend in with vague clues. Do not get exposed.'
+                        : isGeeksforGeeksRoom
+                          ? '⚠️ You have a decoy DSA term. Blend in with vague clues. Do not get exposed.'
+                          : '⚠️ You have a decoy problem. Blend in with vague clues. Do not get exposed.'
                       : isClassicMode
                         ? '✅ Everyone in the crew has this subject. Give hints without making it too obvious to the imposter.'
-                        : '✅ Everyone in the crew has this problem. Give hints other coders spot without spoon-feeding the imposter.'}
+                        : isGeeksforGeeksRoom
+                          ? '✅ Everyone in the crew has this DSA term. Give hints without spoon-feeding the imposter.'
+                          : '✅ Everyone in the crew has this problem. Give hints other coders spot without spoon-feeding the imposter.'}
                   </p>
                 </div>
               ) : (
@@ -585,7 +617,7 @@ function App() {
                   <span className="redacted-bar">
                     ████████████████████████████████████████
                   </span>
-                  <p className="dossier-hold-hint">Hold down or tap to reveal your role & problem</p>
+                  <p className="dossier-hold-hint">Hold down or tap to reveal your role & {isGeeksforGeeksRoom ? 'DSA term' : 'problem'}</p>
                 </div>
               )}
             </section>
@@ -649,16 +681,23 @@ function App() {
                   <h2 id="discuss-phase-title" className="panel-title">
                     ANALYZE ALL SUBMITTED HINTS
                   </h2>
-                  {isPlayerHost && (
+                  {isAlive && (
                     <button
                       className="button button-secondary"
                       type="button"
                       onClick={handleSkipToVote}
                     >
-                      SKIP TO VOTE →
+                      {currentPlayer?.skipToVote ? 'WITHDRAW SKIP VOTE' : 'VOTE TO SKIP →'}
                     </button>
                   )}
                 </div>
+
+                <p className="field-hint">
+                  Skip to voting: {skipVotes}/{skipVotesNeeded} majority votes.{' '}
+                  {currentPlayer?.skipToVote
+                    ? 'Your skip vote is in.'
+                    : 'A majority of alive players can end discussion early.'}
+                </p>
 
                 <div className="hints-grid">
                   {players.map(([uid, player], idx) => {
@@ -710,7 +749,7 @@ function App() {
                     </div>
                   ) : (
                     <div>
-                      <p className="field-hint">Choose who you believe received the {isClassicMode ? 'different subject' : 'decoy problem'}:</p>
+                      <p className="field-hint">Choose who you believe received the {isClassicMode ? 'different subject' : isGeeksforGeeksRoom ? 'decoy DSA term' : 'decoy problem'}:</p>
                       <div className="vote-grid">
                         {players.map(([uid, player], idx) => {
                           if (uid === user?.uid || player.alive === false) return null
@@ -739,6 +778,17 @@ function App() {
                 ) : (
                   <p className="field-hint">Voting is currently in progress among alive players...</p>
                 )}
+
+                <div className="vote-record" aria-live="polite">
+                  <p className="eyebrow">LIVE VOTE RECORD</p>
+                  {alivePlayers.map(([uid, player]) => (
+                    <p key={uid}>
+                      <strong>{player.name}{uid === user?.uid ? ' (YOU)' : ''}</strong>
+                      {' → '}
+                      {player.vote ? room.players[player.vote]?.name ?? player.vote : 'waiting...'}
+                    </p>
+                  ))}
+                </div>
               </section>
             )}
 
@@ -777,11 +827,11 @@ function App() {
 
                     <div className="comparison-table">
                       <div className="comparison-col real">
-                        <h4>{isClassicMode ? 'CREW SUBJECT' : 'CREW PROBLEM'}</h4>
+                        <h4>{isClassicMode ? 'CREW SUBJECT' : isGeeksforGeeksRoom ? 'CREW DSA TERM' : 'CREW PROBLEM'}</h4>
                         <div className="comparison-title">{room.revealedImposter.problemTitle}</div>
                       </div>
                       <div className="comparison-col decoy">
-                        <h4>{isClassicMode ? 'IMPOSTER SUBJECT' : 'IMPOSTER DECOY'}</h4>
+                        <h4>{isClassicMode ? 'IMPOSTER SUBJECT' : isGeeksforGeeksRoom ? 'IMPOSTER DECOY TERM' : 'IMPOSTER DECOY'}</h4>
                         <div className="comparison-title">{room.revealedImposter.decoyTitle}</div>
                       </div>
                     </div>
@@ -964,6 +1014,20 @@ function App() {
             {busy ? 'CONNECTING...' : 'CREATE A ROOM'}
             <span aria-hidden="true"> ↗</span>
           </button>
+
+          <section className="club-room-card" aria-labelledby="geeksforgeeks-room-title">
+            <p className="eyebrow">CLUB ROOM // FIRST-YEAR FRIENDLY</p>
+            <h2 id="geeksforgeeks-room-title">GeeksforGeeks room</h2>
+            <p>Practice only Arrays, Strings, Binary Search, and Trees before joining the main O(SUS) rooms.</p>
+            <button
+              className="button button-secondary create-button"
+              type="button"
+              onClick={handleCreateGeeksforGeeksRoom}
+              disabled={!canEnterRoom}
+            >
+              {busy ? 'CONNECTING...' : 'CREATE GEEKSFORGEEKS ROOM'}
+            </button>
+          </section>
 
 
           <div className="divider">

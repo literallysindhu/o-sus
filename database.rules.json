@@ -29,6 +29,10 @@
             "vote": {
               ".write": "auth != null && auth.uid === $uid && root.child('rooms').child($code).child('phase').val() === 'vote' && data.parent().child('alive').val() === true && newData.isString() && newData.val() !== $uid",
               ".validate": "newData.isString() && newData.val() !== $uid"
+            },
+            "skipToVote": {
+              ".write": "auth != null && auth.uid === $uid && root.child('rooms').child($code).child('phase').val() === 'discuss' && data.parent().child('alive').val() === true && newData.isBoolean()",
+              ".validate": "newData.isBoolean()"
             }
           }
         },

@@ -2,6 +2,7 @@ import { ref, get, update, type Database } from 'firebase/database'
 import { getBank } from './difficulty'
 import { DEFAULT_SETTINGS, type RoomSettings } from './settings'
 import { getClassicBank } from '../problems/classic'
+import { GEEKSFORGEEKS_PROBLEMS } from '../problems/geeksforgeeks'
 
 export const MIN_PLAYERS = 2
 
@@ -42,9 +43,11 @@ export async function startGame(
   }
 
   const settings: RoomSettings = { ...DEFAULT_SETTINGS, ...room.settings }
-  const bank = room.gameMode === 'classic'
-    ? getClassicBank(settings.difficulty)
-    : getBank(settings.difficulty)
+  const bank = room.gameMode === 'geeksforgeeks'
+    ? GEEKSFORGEEKS_PROBLEMS
+    : room.gameMode === 'classic'
+      ? getClassicBank(settings.difficulty)
+      : getBank(settings.difficulty)
   if (bank.length === 0) {
     throw new Error('No problems available for this difficulty.')
   }
@@ -84,6 +87,7 @@ export async function startGame(
     updates[`rooms/${code}/players/${uid}/alive`] = true
     updates[`rooms/${code}/players/${uid}/hint`] = null
     updates[`rooms/${code}/players/${uid}/vote`] = null
+    updates[`rooms/${code}/players/${uid}/skipToVote`] = null
   }
 
   await update(ref(database), updates)

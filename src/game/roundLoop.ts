@@ -111,6 +111,15 @@ export async function castVote(
   await set(ref(database, `rooms/${code}/players/${voterUid}/vote`), targetUid)
 }
 
+export async function voteToSkipDiscussion(
+  database: Database,
+  code: string,
+  uid: string,
+  shouldSkip: boolean,
+): Promise<void> {
+  await set(ref(database, `rooms/${code}/players/${uid}/skipToVote`), shouldSkip)
+}
+
 import { DEFAULT_SETTINGS, type RoomSettings } from './settings'
 
 /**
@@ -272,6 +281,7 @@ export async function advanceFromVote(database: Database, code: string): Promise
     for (const uid of Object.keys(players)) {
       updates[`rooms/${code}/players/${uid}/hint`] = null
       updates[`rooms/${code}/players/${uid}/vote`] = null
+      updates[`rooms/${code}/players/${uid}/skipToVote`] = null
     }
   }
 
@@ -297,6 +307,7 @@ export async function resetToLobby(database: Database, code: string): Promise<vo
     updates[`rooms/${code}/players/${uid}/alive`] = true
     updates[`rooms/${code}/players/${uid}/hint`] = null
     updates[`rooms/${code}/players/${uid}/vote`] = null
+    updates[`rooms/${code}/players/${uid}/skipToVote`] = null
   }
 
   // Clear secrets

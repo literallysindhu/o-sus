@@ -13,7 +13,7 @@ import {
 } from 'firebase/database'
 
 export type GamePhase = 'lobby' | 'hint' | 'discuss' | 'vote' | 'result'
-export type GameMode = 'dsa' | 'classic'
+export type GameMode = 'dsa' | 'classic' | 'geeksforgeeks'
 
 export interface RoomPlayer {
   name: string
@@ -21,6 +21,7 @@ export interface RoomPlayer {
   alive?: boolean
   hint?: string
   vote?: string
+  skipToVote?: boolean
   isBot?: boolean
 }
 
@@ -274,6 +275,7 @@ function parseRoom(value: unknown): GameRoom | null {
       alive: typeof player.alive === 'boolean' ? player.alive : true,
       hint: typeof player.hint === 'string' ? player.hint : undefined,
       vote: typeof player.vote === 'string' ? player.vote : undefined,
+      skipToVote: player.skipToVote === true,
       isBot: typeof player.isBot === 'boolean' ? player.isBot : undefined,
     }
   }
@@ -339,7 +341,10 @@ function parseRoom(value: unknown): GameRoom | null {
     winner: candidate.winner === 'crew' || candidate.winner === 'imposter' ? candidate.winner : null,
     revealedImposter,
     settings,
-    gameMode: candidate.gameMode === 'classic' ? 'classic' : 'dsa',
+    gameMode:
+      candidate.gameMode === 'classic' || candidate.gameMode === 'geeksforgeeks'
+        ? candidate.gameMode
+        : 'dsa',
   }
 }
 

@@ -38,6 +38,7 @@ export function RoomSettingsPanel({
         { id: 'hard' as const, label: 'Master of Misdirection', tagline: 'Subtle subjects. Choose every clue carefully.' },
       ]
     : DIFFICULTIES
+  const isGeeksforGeeksRoom = gameMode === 'geeksforgeeks'
 
   const activeDifficulty =
     modeDifficulties.find((d) => d.id === settings.difficulty) ?? modeDifficulties[0]
@@ -62,9 +63,9 @@ export function RoomSettingsPanel({
         </div>
         <div className="settings-summary-content">
           <div className="summary-item summary-item-highlight">
-            <span className="summary-label">DIFFICULTY</span>
-            <strong className="summary-value">{activeDifficulty.label}</strong>
-            <span className="summary-tagline">"{activeDifficulty.tagline}"</span>
+            <span className="summary-label">{isGeeksforGeeksRoom ? 'CLUB TOPICS' : 'DIFFICULTY'}</span>
+            <strong className="summary-value">{isGeeksforGeeksRoom ? 'Arrays · Strings · Binary Search · Trees' : activeDifficulty.label}</strong>
+            <span className="summary-tagline">{isGeeksforGeeksRoom ? 'First-year learning room.' : `"${activeDifficulty.tagline}"`}</span>
           </div>
           <div className="summary-grid">
             <div className="summary-item">
@@ -92,7 +93,7 @@ export function RoomSettingsPanel({
   const content = (
     <div className="settings-controls-wrapper">
       {/* 1. Difficulty Level Cards */}
-      <fieldset className="settings-group">
+      {!isGeeksforGeeksRoom && <fieldset className="settings-group">
         <legend className="settings-legend">
           {gameMode === 'classic' ? 'DIFFICULTY LEVEL // SUBJECTS' : 'DIFFICULTY LEVEL // TOPIC DIFFICULTY'}
         </legend>
@@ -117,7 +118,7 @@ export function RoomSettingsPanel({
             )
           })}
         </div>
-      </fieldset>
+      </fieldset>}
 
       {/* 2. Max Rounds Segmented Control */}
       <fieldset className="settings-group">
